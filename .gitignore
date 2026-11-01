@@ -11,3 +11,8 @@ ModosPC/tools/
 # Artefatos do Windows
 Thumbs.db
 Desktop.ini
+
+# Artefatos de build do instalador
+installer/*.msi
+installer/*.wixobj
+installer/*.wixpdb

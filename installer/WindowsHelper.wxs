@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product
+      Id="6C0EA69A-18BE-4310-9A7A-8086BC707CDD"
+      Name="Windows Helper"
+      Language="1046"
+      Version="1.0.0"
+      Manufacturer="Eliel-DM"
+      UpgradeCode="D6708973-3114-41DC-BFD9-60781405399B">
+
+    <Package
+        InstallerVersion="200"
+        Compressed="yes"
+        InstallScope="perUser"
+        Description="Windows Helper - alternador de perfis do Windows (JOGO / ESTUDO-DEV / DIA A DIA)"
+        Comments="Script de perfis de energia e otimizacao reversivel. Nao desativa anti-cheats nem servicos criticos." />
+
+    <MajorUpgrade DowngradeErrorMessage="Uma versao mais nova do [ProductName] ja esta instalada." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <!-- Instalacao per-user: %LOCALAPPDATA%\WindowsHelper -->
+      <Directory Id="LocalAppDataFolder">
+        <Directory Id="INSTALLFOLDER" Name="WindowsHelper">
+          <Component Id="MainFiles" Guid="8A8D841F-77D8-4B00-83C2-2E1ABFC7719E">
+            <File Id="modosPs1" Source="payload\modos.ps1" />
+            <File Id="readmeMd" Source="payload\README.md" />
+            <File Id="launcherBat" Source="payload\Windows Helper.bat" Name="Windows Helper.bat" />
+            <!-- KeyPath em HKCU: exigido pelo ICE38 para instalacao per-user -->
+            <RegistryValue Root="HKCU" Key="Software\WindowsHelper" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+            <RemoveFolder Id="RemoveInstallFolder" Directory="INSTALLFOLDER" On="uninstall" />
+          </Component>
+        </Directory>
+      </Directory>
+      <!-- Atalho no Menu Iniciar (per-user) -->
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="AppMenuFolder" Name="Windows Helper">
+          <Component Id="StartMenuShortcut" Guid="4C4A3C36-C329-4C30-A252-8B69D60C9B52">
+            <Shortcut
+                Id="WindowsHelperShortcut"
+                Name="Windows Helper"
+                Description="Alternador de perfis: JOGO / ESTUDO-DEV / DIA A DIA"
+                Target="[INSTALLFOLDER]Windows Helper.bat"
+                WorkingDirectory="INSTALLFOLDER" />
+            <RemoveFolder Id="RemoveAppMenu" On="uninstall" />
+            <RegistryValue Root="HKCU" Key="Software\WindowsHelper"
+                           Name="shortcutInstalled" Type="integer" Value="1"
+                           KeyPath="yes" />
+          </Component>
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <Feature Id="ProductFeature" Title="Windows Helper" Level="1">
+      <ComponentRef Id="MainFiles" />
+      <ComponentRef Id="StartMenuShortcut" />
+    </Feature>
+
+  </Product>
+</Wix>

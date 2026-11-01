@@ -27,7 +27,8 @@ $ErrorActionPreference = 'SilentlyContinue'
 # Ferramenta OPCIONAL de limpeza de RAM (EmptyStandbyList.exe)
 # Procurada em pastas relativas ao script, para funcionar em
 # qualquer maquina que clonar o projeto. Se nao encontrar,
-# o modo JOGO funciona normalmente - apenas pula a limpeza.
+# o modo JOGO oferece o download automatico (repo stefanpejcic
+# no GitHub, sha256 conferido contra o binario oficial wj32).
 # ------------------------------------------------------------
 $script:LimpezaRAM = $null
 foreach ($c in @(
@@ -35,6 +36,45 @@ foreach ($c in @(
     "$PSScriptRoot\EmptyStandbyList.exe"
 )) {
     if (Test-Path $c) { $script:LimpezaRAM = $c; break }
+}
+
+# Download do EmptyStandbyList.exe da fonte comunitaria do GitHub
+# (sha256 6D2B18F8...21CBE, identico ao original do wj32.org)
+function Get-LimpezaRAM {
+    Write-Host ""
+    Write-Host " A limpeza de RAM usa o EmptyStandbyList.exe (freeware de" -ForegroundColor Yellow
+    Write-Host " Wen Jia Liu, autor do Process Hacker). Ele nao vem no repo." -ForegroundColor Yellow
+    $resp = Read-Host " Baixar agora para ModosPC\tools\? (S/N)"
+    if ($resp -notmatch '^[Ss]') { return $null }
+
+    $destino = "$PSScriptRoot\tools"
+    $exePath = "$destino\EmptyStandbyList.exe"
+    $sha256Esperado = "6D2B18F8A8BA787D3FA4C6E36ED6C7AF66B10083CE555A21EC24B2ADA3821CBE"
+    $fontes = @(
+        "https://raw.githubusercontent.com/stefanpejcic/EmptyStandbyList/master/EmptyStandbyList.exe",
+        "https://raw.githubusercontent.com/InfiniteLoop889/EmptyStandbyList/main/EmptyStandbyList.exe"
+    )
+    foreach ($fonte in $fontes) {
+        try {
+            Write-Host "   [..] Baixando de $fonte ..." -ForegroundColor Gray
+            New-Item $destino -ItemType Directory -Force | Out-Null
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            Invoke-WebRequest -Uri $fonte -OutFile $exePath -UseBasicParsing -TimeoutSec 30 `
+                -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+            $hash = (Get-FileHash $exePath -Algorithm SHA256).Hash
+            if ($hash -ne $sha256Esperado) {
+                Write-Host "   [ER] sha256 divergente ($hash) - descartando arquivo" -ForegroundColor Red
+                Remove-Item $exePath -Force -ErrorAction SilentlyContinue
+                continue
+            }
+            Write-Host "   [OK] EmptyStandbyList.exe instalado em ModosPC\tools\ (sha256 conferido)" -ForegroundColor Green
+            return $exePath
+        } catch {
+            Write-Host "   [AV] Falhou: $($_.Exception.Message)" -ForegroundColor Yellow
+        }
+    }
+    Write-Host "   [ER] Nenhuma fonte respondeu. Baixe manualmente em ModosPC\tools\" -ForegroundColor Red
+    return $null
 }
 
 # --- Chave que guarda o modo ativo (usada pela opcao Status) ---
@@ -73,7 +113,7 @@ function Show-Menu {
     Write-Host "   [4] Limpar inicializacao (remove TODOS apps de 3os)"       -ForegroundColor Yellow
     Write-Host "   [5] Status atual"                                           -ForegroundColor Yellow
     Write-Host "   [6] Restaurar padroes Windows"                              -ForegroundColor Yellow
-    Write-Host "   [7] Entender os modos (explicacao detalhada)"               -ForegroundColor Yellow
+    Write-Host "   [7] AJUDA (entenda os modos)"                                -ForegroundColor Yellow
     Write-Host "   [0] Sair"                                                   -ForegroundColor Yellow
     Write-Host ""
 }
@@ -218,7 +258,17 @@ function Set-ModoJogo {
         Write-Host "   [OK] RAM limpa - liberados ~$liberada GB de cache" -ForegroundColor Green
     } else {
         Write-Host "   [AV] EmptyStandbyList.exe nao encontrado - limpeza de RAM pulada" -ForegroundColor Yellow
-        Write-Host "        (opcional: coloque o exe em ModosPC\tools\ ou na pasta irma)" -ForegroundColor DarkGray
+        $script:LimpezaRAM = Get-LimpezaRAM
+        if ($script:LimpezaRAM -and (Test-Path $script:LimpezaRAM)) {
+            Write-Host "   [..] Limpando memoria (3 passadas, como no booster original)..." -ForegroundColor Green
+            $antes = [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory/1MB, 1)
+            & $script:LimpezaRAM workingsets 2>$null
+            & $script:LimpezaRAM modifiedpagelist 2>$null
+            & $script:LimpezaRAM standbylist 2>$null
+            $depois = [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory/1MB, 1)
+            $liberada = [math]::Max(0, $depois - $antes)
+            Write-Host "   [OK] RAM limpa - liberados ~$liberada GB de cache" -ForegroundColor Green
+        }
     }
 
     Set-ItemProperty "HKCU:\Software\ModosPC" -Name ModoAtual -Value "JOGO" -Type String

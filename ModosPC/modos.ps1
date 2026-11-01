@@ -30,7 +30,6 @@ $ErrorActionPreference = 'SilentlyContinue'
 # ------------------------------------------------------------
 $script:LimpezaRAM = $null
 foreach ($c in @(
-    "$PSScriptRoot\..\iGust Windows Boost\EmptyStandbyList.exe",
     "$PSScriptRoot\tools\EmptyStandbyList.exe",
     "$PSScriptRoot\EmptyStandbyList.exe"
 )) {

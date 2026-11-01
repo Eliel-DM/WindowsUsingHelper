@@ -38,5 +38,4 @@ Sem o arquivo, o modo JOGO funciona normalmente e apenas avisa que a limpeza foi
 ## O que não é versionado
 
 - `RELATÓRIO.txt` — relatório msinfo32 desta máquina (dados pessoais)
-- `iGust Windows Boost/` — pacote de terceiros usado como referência
 - `ModosPC/tools/` — binários externos (EmptyStandbyList)

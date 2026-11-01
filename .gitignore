@@ -4,8 +4,7 @@ relatorio_utf8.txt
 *.txt
 !README.md
 
-# Software de terceiros (iGust Windows Boost) - nao versionar
-iGust Windows Boost/
+# Software de terceiros - nao versionar
 ModosPC/tools/
 *.exe
 

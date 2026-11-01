@@ -1,0 +1,14 @@
+# Dados pessoais (relatorio msinfo32 desta maquina) - nao versionar
+RELATÓRIO.txt
+relatorio_utf8.txt
+*.txt
+!README.md
+
+# Software de terceiros (iGust Windows Boost) - nao versionar
+iGust Windows Boost/
+ModosPC/tools/
+*.exe
+
+# Artefatos do Windows
+Thumbs.db
+Desktop.ini

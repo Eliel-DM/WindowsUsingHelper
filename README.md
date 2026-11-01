@@ -1,4 +1,4 @@
-# WindowsUsingHelper
+# Windows Helper
 
 Alternador de perfis do Windows para quem usa o mesmo PC para **desenvolvimento, faculdade e jogos**.
 
@@ -15,7 +15,7 @@ Um único script (`ModosPC/modos.ps1`) ajusta na hora — e de forma reversível
 
 | Modo | Quando usar | O que faz |
 |---|---|---|
-| **1 · JOGO** | Valorant, LoL, jogos variados | Energia em Alto Desempenho, GameDVR desligado, CPU prioriza o jogo, Game Mode do Windows ligado e limpeza de RAM (cache da standby list) |
+| **1 · JOGO** | Valorant, LoL, jogos variados | Energia em Desempenho Máximo (Ultimate Performance), GameDVR desligado, CPU prioriza o jogo, Game Mode do Windows ligado e limpeza de RAM (cache da standby list) |
 | **2 · ESTUDO/DEV** | Faculdade, IDEs, Docker/WSL2 | Energia equilibrada, prioridade equilibrada (IDE + containers + navegador juntos), GameDVR padrão |
 | **3 · DIA A DIA** | Uso geral | Padrões do Windows (estado neutro) |
 

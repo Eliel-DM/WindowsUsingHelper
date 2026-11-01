@@ -88,8 +88,8 @@ function Show-ModosInfo {
     Write-Host ""
     Write-Host " [1] MODO JOGO - quando for jogar" -ForegroundColor Yellow
     Write-Host "   O que muda:" -ForegroundColor White
-    Write-Host "   - Plano de energia ALTO DESEMPENHO: o processador nao" -ForegroundColor Gray
-    Write-Host "     economiza energia, mantem o clock alto o tempo todo." -ForegroundColor Gray
+    Write-Host "   - Plano de energia ULTIMATE PERFORMANCE: o processador nao" -ForegroundColor Gray
+    Write-Host "     economiza energia e mantem o clock maximo o tempo todo." -ForegroundColor Gray
     Write-Host "   - GameDVR DESLIGADO: para a gravacao em segundo plano do" -ForegroundColor Gray
     Write-Host "     Xbox Game Bar, que consome GPU/CPU enquanto voce joga." -ForegroundColor Gray
     Write-Host "   - Prioridade de CPU no PRIMEIRO PLANO: o jogo recebe" -ForegroundColor Gray
@@ -155,13 +155,24 @@ function Set-ModoJogo {
     }
     Write-Host ""
 
-    # 1) Plano de energia Alto Desempenho (cria se nao existir)
-    powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c 2>$null
+    # 1) Plano de energia ULTIMATE PERFORMANCE (esquema oculto do Windows)
+    #    Tenta ativar o GUID original; se nao existir (nunca foi desbloqueado),
+    #    desbloqueia com /duplicatescheme e ativa a copia criada.
+    powercfg /setactive e9a42b02-d5df-448d-aa00-03f14749eb61 2>$null
     if ($LASTEXITCODE -ne 0) {
-        powercfg /duplicatescheme 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c 2>$null | Out-Null
-        powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c 2>$null | Out-Null
+        # Cria a copia se ainda nao existir (evita duplicatas: procura pelo nome)
+        $temUltimate = powercfg /list 2>$null | Select-String "Ultimate Performance"
+        if (-not $temUltimate) {
+            powercfg /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 2>$null | Out-Null
+        }
+        # Ativa o plano "Ultimate Performance" existente (o GUID muda a cada copia)
+        $scheme = powercfg /list 2>$null | Select-String "Ultimate Performance" |
+            Select-Object -First 1
+        if ($scheme -match '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})') {
+            powercfg /setactive $Matches[1] 2>$null
+        }
     }
-    Write-Host "   [OK] Energia em ALTO DESEMPENHO - CPU sem economia de energia" -ForegroundColor Green
+    Write-Host "   [OK] Energia em ULTIMATE PERFORMANCE (Desempenho Maximo)" -ForegroundColor Green
 
     # 2) GameDVR desligado (gravacao em 2o plano do Xbox Game Bar)
     Set-ItemProperty "HKCU:\System\GameConfigStore" -Name GameDVR_Enabled -Value 0 -Type DWord

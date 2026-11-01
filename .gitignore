@@ -12,7 +12,6 @@ ModosPC/tools/
 Thumbs.db
 Desktop.ini
 
-# Artefatos de build do instalador
-installer/*.msi
+# Artefatos de build do instalador (o .msi final E versionado para distribuicao)
 installer/*.wixobj
 installer/*.wixpdb

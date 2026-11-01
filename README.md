@@ -55,4 +55,4 @@ Isso compila `WindowsHelper.wxs` (candle + light) e gera `Windows Helper 1.0.0.m
 
 - `RELATÓRIO.txt` — relatório msinfo32 desta máquina (dados pessoais)
 - `ModosPC/tools/` — binários externos (EmptyStandbyList)
-- `installer/*.msi`, `*.wixobj`, `*.wixpdb` — artefatos de build; só o `.wxs` e o `build.bat` vão pro repo
+- `installer/*.wixobj`, `*.wixpdb` — artefatos intermediários de build; o `.wxs`, o `build.bat`, o `payload/` e o `.msi` final vão pro repo

@@ -9,6 +9,7 @@
 #   - Prioridade de CPU (Win32PrioritySeparation)
 #   - GameDVR (gravacao em segundo plano do Xbox Game Bar)
 #   - Limpeza de RAM no modo JOGO (EmptyStandbyList, opcional)
+#   - Prioridade ALTA para CS2 no modo JOGO (IFEO, opcional)
 #
 #  O que este script NAO faz (de proposito):
 #   - Nao desativa servicos criticos: anti-cheat (Vanguard),
@@ -98,6 +99,9 @@ function Show-ModosInfo {
     Write-Host "   - LIMPEZA DE RAM: roda o EmptyStandbyList em 3 passadas" -ForegroundColor Gray
     Write-Host "     (workingsets, modifiedpagelist e standbylist), liberando" -ForegroundColor Gray
     Write-Host "     cache de memoria acumulado durante o dia." -ForegroundColor Gray
+    Write-Host "   - CS2: se voce for jogar CS2, o modo pergunta e configura o" -ForegroundColor Gray
+    Write-Host "     cs2.exe para nascer com prioridade de CPU ALTA (registro" -ForegroundColor Gray
+    Write-Host "     IFEO) - mesmo ajuste dos boosters, mas checando antes." -ForegroundColor Gray
     Write-Host "   O que NAO muda:" -ForegroundColor White
     Write-Host "   - Nenhum servico e desativado. Vanguard e anti-cheats" -ForegroundColor Gray
     Write-Host "     continuam intactos (zero risco de ban)." -ForegroundColor Gray
@@ -182,6 +186,20 @@ function Set-ModoJogo {
     # 3) Prioridade de CPU para o primeiro plano (jogos ganham)
     Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name Win32PrioritySeparation -Value 38 -Type DWord
     Write-Host "   [OK] CPU prioriza o JOGO em vez de programas de fundo" -ForegroundColor Green
+
+    # 3.1) CS2: prioridade de CPU ALTA exclusiva via IFEO (mesmo ajuste dos
+    #      boosters, mas com checagem antes de aplicar - nunca duplica)
+    $cs2 = Read-Host " Vai jogar CS2? (S/N)"
+    if ($cs2 -match '^[Ss]') {
+        $perfKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\cs2.exe\PerfOptions"
+        $atual = (Get-ItemProperty $perfKey -ErrorAction SilentlyContinue).CpuPriorityClass
+        if ($atual -eq 3) {
+            Write-Host "   [OK] CS2 ja esta com prioridade ALTA (IFEO) - nada a fazer" -ForegroundColor Green
+        } else {
+            reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\cs2.exe\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f | Out-Null
+            Write-Host "   [OK] CS2 configurado com prioridade ALTA (cs2.exe inicia sem disputar CPU)" -ForegroundColor Green
+        }
+    }
 
     # 4) Game Mode oficial do Windows (seguro com anti-cheat)
     Set-ItemProperty "HKCU:\Software\Microsoft\GameBar" -Name AutoGameModeEnabled -Value 1 -Type DWord
@@ -362,6 +380,12 @@ while ($true) {
             Write-Host " RESTAURANDO PADROES DO WINDOWS..." -ForegroundColor Yellow
             Write-Host ""
             Reset-Padroes
+            # Remove a prioridade ALTA do CS2 (IFEO), se o modo JOGO tiver configurado
+            $cs2Key = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\cs2.exe\PerfOptions"
+            if (Test-Path $cs2Key) {
+                Remove-Item $cs2Key -Recurse -ErrorAction SilentlyContinue
+                Write-Host "   [OK] CS2: prioridade via IFEO removida (padrao do Windows)" -ForegroundColor Green
+            }
             Remove-Item "HKCU:\Software\ModosPC" -Recurse -ErrorAction SilentlyContinue
             Write-Host ""
             Write-Host " >>> Tudo voltou ao padrao do Windows <<<" -ForegroundColor Green

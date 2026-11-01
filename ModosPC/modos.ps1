@@ -37,6 +37,9 @@ foreach ($c in @(
     if (Test-Path $c) { $script:LimpezaRAM = $c; break }
 }
 
+# --- Chave que guarda o modo ativo (usada pela opcao Status) ---
+New-Item "HKCU:\Software\ModosPC" -Force | Out-Null
+
 # --- Exigir admin (necessario para powercfg e chaves HKLM) ---
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
     ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -50,8 +53,7 @@ function Show-Menu {
     Clear-Host
     Write-Host ""
     Write-Host " ================================================================" -ForegroundColor Cyan
-    Write-Host "                     MODOS PC - Z0R0PA"                           -ForegroundColor White
-    Write-Host "        Perfis de uso para PC de estudo + dev + jogos"            -ForegroundColor DarkCyan
+    Write-Host "                      WindowsUsingHelper"                         -ForegroundColor White
     Write-Host " ================================================================" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  COMO FUNCIONA: escolha um perfil e o Windows e ajustado na"  -ForegroundColor Gray
@@ -94,13 +96,14 @@ function Show-ModosInfo {
     Write-Host "     mais atencao do processador que programas de fundo." -ForegroundColor Gray
     Write-Host "   - Game Mode do Windows LIGADO: recurso oficial da" -ForegroundColor Gray
     Write-Host "     Microsoft que prioriza o jogo. Seguro com anti-cheat." -ForegroundColor Gray
-    Write-Host "   - LIMPEZA DE RAM: roda o EmptyStandbyList e descarta o" -ForegroundColor Gray
+    Write-Host "   - LIMPEZA DE RAM: roda o EmptyStandbyList em 3 passadas" -ForegroundColor Gray
+    Write-Host "     (workingsets, modifiedpagelist e standbylist), liberando" -ForegroundColor Gray
     Write-Host "     cache de memoria acumulado durante o dia." -ForegroundColor Gray
     Write-Host "   O que NAO muda:" -ForegroundColor White
     Write-Host "   - Nenhum servico e desativado. Vanguard e anti-cheats" -ForegroundColor Gray
     Write-Host "     continuam intactos (zero risco de ban)." -ForegroundColor Gray
-    Write-Host "   Rotina ideal: estava estudando/dev > opcao 1 > fechar" -ForegroundColor Gray
-    Write-Host "   Docker e IDEs manualmente > jogar." -ForegroundColor Gray
+    Write-Host "   Rotina ideal: estava estudando/dev > opcao 1 > confirmar o" -ForegroundColor Gray
+    Write-Host "   fechamento de Docker/IDEs/navegadores (salve antes) > jogar." -ForegroundColor Gray
 
     Write-Host ""
     Write-Host " [2] MODO ESTUDO/DEV - faculdade e programacao" -ForegroundColor Cyan
@@ -136,6 +139,22 @@ function Set-ModoJogo {
     Write-Host " (nao desativa servico algum - anti-cheats ficam intactos)" -ForegroundColor DarkGray
     Write-Host ""
 
+    # 0) Fechar Docker, IDEs e navegadores (com confirmacao - salve antes!)
+    $fechar = Read-Host " Fechar Docker, IDEs e navegadores agora? SALVE SEU TRABALHO antes (S/N)"
+    if ($fechar -match '^[Ss]') {
+        Write-Host "   [..] Fechando Docker, IDEs e navegadores..." -ForegroundColor Green
+        $alvos = 'Docker Desktop', 'com.docker.backend', 'com.docker.build',
+                 'chrome', 'msedge', 'firefox', 'brave', 'opera',
+                 'Code', 'idea64', 'pycharm64', 'webstorm64', 'rider64',
+                 'clion64', 'goland64', 'phpstorm64', 'devenv'
+        foreach ($n in $alvos) { Stop-Process -Name $n -Force -ErrorAction SilentlyContinue }
+        wsl --shutdown 2>$null
+        Write-Host "   [OK] Docker/WSL, IDEs e navegadores fechados - RAM liberada" -ForegroundColor Green
+    } else {
+        Write-Host "   [AV] Ok - feche manualmente antes de jogar" -ForegroundColor Yellow
+    }
+    Write-Host ""
+
     # 1) Plano de energia Alto Desempenho (cria se nao existir)
     powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c 2>$null
     if ($LASTEXITCODE -ne 0) {
@@ -161,8 +180,10 @@ function Set-ModoJogo {
 
     # 5) Limpeza de memoria com EmptyStandbyList (se disponivel)
     if ($script:LimpezaRAM -and (Test-Path $script:LimpezaRAM)) {
-        Write-Host "   [..] Limpando memoria (descartando cache acumulado)..." -ForegroundColor Green
+        Write-Host "   [..] Limpando memoria (3 passadas, como no booster original)..." -ForegroundColor Green
         $antes = [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory/1MB, 1)
+        & $script:LimpezaRAM workingsets 2>$null
+        & $script:LimpezaRAM modifiedpagelist 2>$null
         & $script:LimpezaRAM standbylist 2>$null
         $depois = [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory/1MB, 1)
         $liberada = [math]::Max(0, $depois - $antes)

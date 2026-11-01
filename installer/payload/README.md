@@ -38,7 +38,21 @@ ModosPC/tools/EmptyStandbyList.exe
 
 Sem o arquivo, o modo JOGO funciona normalmente e apenas avisa que a limpeza foi pulada.
 
+## Instalador MSI (opcional)
+
+O projeto pode ser empacotado num instalador MSI (per-user, sem precisar de admin para instalar):
+
+1. Requer [WiX Toolset v3.x](https://wixtoolset.org/) instalado
+2. Na pasta `installer/`:
+
+```
+build.bat
+```
+
+Isso compila `WindowsHelper.wxs` (candle + light) e gera `Windows Helper 1.0.0.msi`. O instalador copia `modos.ps1`, `README.md` e o launcher `Windows Helper.bat` para `%LOCALAPPDATA%\WindowsHelper`, cria atalho "Windows Helper" no Menu Iniciar e aparece em **Configurações → Aplicativos** para desinstalação limpa. O launcher pede elevação de admin ao abrir (necessário para o `powercfg`).
+
 ## O que não é versionado
 
 - `RELATÓRIO.txt` — relatório msinfo32 desta máquina (dados pessoais)
 - `ModosPC/tools/` — binários externos (EmptyStandbyList)
+- `installer/*.msi`, `*.wixobj`, `*.wixpdb` — artefatos de build; só o `.wxs` e o `build.bat` vão pro repo
